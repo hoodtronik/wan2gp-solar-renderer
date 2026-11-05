@@ -2,6 +2,8 @@
 
 **Run [SolarRenderer](https://github.com/Enderfga/SolarRenderer) inside [WanGP](https://github.com/deepbeepmeep/Wan2GP), with no ComfyUI and no changes to WanGP's core.**
 
+**SolarRenderer links:** [home page](https://enderfga.cn/SolarRenderer/) · [code](https://github.com/Enderfga/SolarRenderer) · [paper](https://arxiv.org/abs/2610.28630) · [weights](https://huggingface.co/Enderfga/SolarRenderer)
+
 SolarRenderer turns a structure video (a grey box previz, depth, skeletons, a segmentation, a game's frames) into a finished video that follows it frame by frame, on MiniMax H3 in a few steps. This plugin also adds **Two Phases to FastH3 Omni**, which WanGP normally locks to one phase.
 
 This is an unofficial community plugin, not affiliated with the SolarRenderer authors, MiniMax or WanGP.
@@ -23,41 +25,76 @@ SolarRenderer's two LoRAs load in WanGP on their own, but alone they drift off t
 
 ## Install
 
-**From WanGP:** open **Apps & PlugIn Manager**, paste this repository's URL under **Install from URL**, install, then restart WanGP.
+### From WanGP
 
-**By hand:**
+![Open Apps & PlugIn Manager, paste the repo URL under Install from URL, click Download and Install from URL](docs/images/1_install.png)
+
+1. Open **Apps & PlugIn Manager**.
+2. Open **Install from URL** and paste `https://github.com/hoodtronik/wan2gp-solar-renderer`.
+3. Click **Download and Install from URL**. You should see "Plugin 'wan2gp-solar-renderer' installed. It has been auto-enabled." Restart WanGP.
+
+If it loaded, the console prints `[H3 SolarRenderer] active`.
+
+### By hand
 
 ```bash
 cd <WanGP app>/plugins
 git clone https://github.com/hoodtronik/wan2gp-solar-renderer
 ```
 
-Then enable **H3 SolarRenderer** in the manager and restart WanGP. If you downloaded the LoRAs yourself, put them in `loras/minimax_h3`:
+Then enable **H3 SolarRenderer** in the manager and restart WanGP.
+
+### The LoRAs
+
+The two profiles point at the LoRAs by URL, so WanGP should fetch them on first use. If you download them yourself, put them in `loras/minimax_h3`:
 
 - `solarrenderer_4step_lora.safetensors`
 - `solarrenderer_control_lora.safetensors`
 
-If it loaded, the console prints `[H3 SolarRenderer] active`.
-
 ## Use
 
-**Selecting the two LoRAs is the switch.** Nothing else turns the mode on, and H3 jobs without them are untouched.
+**Selecting the two LoRAs is the switch.** Nothing else turns the mode on, and H3 jobs without them are untouched. The profile below selects them for you.
+
+The steps show FastH3 Omni with Two Phases. For regular H3, choose **Pruned** in step 6 and **SolarRenderer 4 Steps** in step 7, and leave it on one phase.
+
+### Choose the model and the profile
+
+![Model menus: MiniMax H3, Ref2VA 20B, FastH3 Omni 8-Step](docs/images/2_model.png)
+
+![Choose SolarRenderer FastH3 2 Phases in the preset list, then click Apply](docs/images/3_profile.png)
+
+The profile is listed at the top of the preset dropdown, under **Accelerators Profiles**. WanGP confirms when it has been applied.
+
+### Add the start frame and the structure video
+
+![Start with Image, the start frame, Use Control Video as In-Context Guide, Generate without Reference Images, the structure video](docs/images/4_inputs.png)
+
+Step 11 matters most. **Use One Reference Video looks right but is the wrong mode:** it is not frame-aligned, and the plugin stops the job with an error.
+
+The start frame sets the look. In the picture it is grey only because this is a test, and a grey start frame gives you grey frames.
+
+### Write the prompt
+
+![Paste the six-part prompt into the prompt box](docs/images/5_prompt.png)
+
+SolarRenderer was trained on a six-part prompt, and upstream calls it the single biggest lever on quality. Write it with the [`solarrenderer-caption`](https://github.com/Enderfga/SolarRenderer/tree/main/skills/solarrenderer-caption) skill in their repository. Your structure video is `<Video 1>` and your start frame is `<Video 2>`.
+
+### Check the settings, then generate
+
+![Size, frame count, Two Phases and All the Lines are Part of the Same Prompt](docs/images/6_settings.png)
+
+These are under **Advanced Mode**. Click **Generate**. To confirm the job really ran in this mode, see Troubleshooting.
+
+### Settings through the API
 
 | Setting | Value |
 |---|---|
-| Model | FastH3 Omni, or MiniMax H3 Ref2VA Pruned |
+| Model | `minimax_h3_fasth3_omni`, or `minimax_h3_ref2va_pruned` |
 | LoRAs | both at 1.0. For Two Phases, use `1;1 1;1` |
-| Video mode | Reference Video (`video_prompt_type` `V`), with the structure as `video_guide` |
-| Start image | the look of the shot (`image_prompt_type` `S`, `image_start`), made from frame 0 of the structure |
-| Prompt | SolarRenderer's six-part form (below) |
-| Prompt splitting | one prompt (`multi_prompts_gen_type` `FG`), or the six sections become six jobs |
+| Video | `video_prompt_type` `V` or `VU`, with the structure as `video_guide` |
+| Start image | `image_prompt_type` `S`, `image_start` |
+| Prompt splitting | `multi_prompts_gen_type` `FG`, or the six sections become six jobs |
 | Sampler | Euler. On regular H3 use 4 steps, flow shift 12, guidance 1, one phase |
-
-Profiles are included for both models: **SolarRenderer 4 Steps** (regular H3) and **SolarRenderer FastH3 2 Phases**.
-
-### The prompt
-
-SolarRenderer was trained on a six-part prompt, and upstream calls it the single biggest lever on quality. Write it with the [`solarrenderer-caption`](https://github.com/Enderfga/SolarRenderer/tree/main/skills/solarrenderer-caption) skill in their repository. Your structure video is `<Video 1>` and your start frame is `<Video 2>`.
 
 ### Headless
 
@@ -95,15 +132,26 @@ Measured on two shots, one take each, 107 frames at 1920x1088 or 864x480, includ
 - **Colored previz was no better than grey** in our tests. Both leaked a little of the layout's look at times.
 - **No usable sound.** Mute the output and add audio afterwards, so dialogue shots belong on a normal H3 lane.
 - **No character references.** Identity comes from the first frame only.
-- **Trained at 1344x768, 158 frames.** Other sizes work, with no guarantee. Frame counts are 17n+5, and in our runs WanGP rendered at least 107 frames, so trim short shots in the edit.
+- **Trained at 1344x768, 158 frames.** Other sizes work, with no guarantee. Frame counts are 17n+5. WanGP's frame slider starts at 107 for FastH3, so trim short shots in the edit. If the structure video is shorter than the render, the model carries on by itself past its end.
 - **Not tested here:** the causal LoRA pair and long clips.
 
 ## Troubleshooting
 
+- **`SolarRenderer needs H3 Ref2VA and a frame-aligned structure video`:** in the GUI, choose **Use Control Video as In-Context Guide**, not **Use One Reference Video**.
 - **The render looks fine but drifts off the structure:** the mode did not run. Each job writes a line to `solar_jobs.log` in the plugin folder; no new line means it never ran. Check that both LoRA filenames still contain `solarrenderer_`.
 - **`[H3 SolarRenderer] DISABLED`:** a WanGP update changed the H3 pipeline. Please open an issue with the message.
 - **`Error parsing Loras Multipliers`:** on regular H3 use `1.0 1.0`. `1;1 1;1` is for Two Phases.
-- **Six jobs instead of one:** set `multi_prompts_gen_type` to `FG`.
+- **Six jobs instead of one:** set **How to Process each Line of the Text Prompt** to **All the Lines are Part of the Same Prompt** (`FG` through the API).
+
+## What has been tested
+
+On WanGP v19.10, starting with the plugin removed:
+
+- Install from URL, then a restart: the plugin loads.
+- Both profiles appear in the preset list and apply.
+- The steps above, run through the GUI with FastH3 Omni at 832x480 and 107 frames: 70 s. The file's embedded settings read `guidance_phases` 2, `video_prompt_type` `VU`, `multi_prompts_gen_type` `FG`, and `solar_jobs.log` shows the job.
+
+Not tested: a GUI render with **SolarRenderer 4 Steps** (regular H3 was only rendered headless), and WanGP downloading the LoRAs from the profile links. We already had the files; both links answer with the right file size.
 
 ## Licenses and credits
 
