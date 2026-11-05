@@ -41,8 +41,9 @@ def main():
         "num_inference_steps": 8 if a.fasth3 else 4, "num_inference_steps2": 3, "sample_solver": "euler", "flow_shift": 12.0,
         "guidance_phases": a.phases, "guidance_scale": 1.0, "custom_sigmas": "", "skip_steps_cache_type": "", "sliding_window_size": 362,
         "video_prompt_type": "V", "video_guide": str(structure), "audio_prompt_type": "",
-        "activated_loras": ["solarrenderer_4step_lora.safetensors", "solarrenderer_control_lora.safetensors"],
-        "loras_multipliers": "1;1 1;1" if a.phases == 2 else "1.0 1.0", "custom_settings": {"audio_refinement": "none"},
+        # The 4-step LoRA in Two Phases lays a visible mesh over the frame: Two Phases runs the control LoRA alone.
+        "activated_loras": ["solarrenderer_control_lora.safetensors"] if a.phases == 2 else ["solarrenderer_4step_lora.safetensors", "solarrenderer_control_lora.safetensors"],
+        "loras_multipliers": "1;1" if a.phases == 2 else "1.0 1.0", "custom_settings": {"audio_refinement": "none"},
     }
     if first:
         settings.update(image_prompt_type="S", image_start=str(first))

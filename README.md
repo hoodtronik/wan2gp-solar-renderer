@@ -53,7 +53,9 @@ The two profiles point at the LoRAs by URL, so WanGP should fetch them on first 
 
 ## Use
 
-**Selecting the two LoRAs is the switch.** Nothing else turns the mode on, and H3 jobs without them are untouched. The profile below selects them for you.
+**Selecting a SolarRenderer LoRA is the switch.** Nothing else turns the mode on, and H3 jobs without them are untouched. The profile below selects what it needs.
+
+> **Changed in 0.2.1: do not run the 4-step LoRA in Two Phases.** It lays a visible mesh over the frame, heavy at 1080. The **SolarRenderer FastH3 2 Phases** profile now uses the control LoRA only, and **SolarRenderer FastH3 1 Phase** keeps both LoRAs. If you rendered with the old profile, look at your clips at 100%: a shrunken view can hide it. Also avoid FastH3 Two Phases at 1080: see below.
 
 The steps show FastH3 Omni with Two Phases. For regular H3, choose **Pruned** in step 6 and **SolarRenderer 4 Steps** in step 7, and leave it on one phase.
 
@@ -90,7 +92,7 @@ These are under **Advanced Mode**. Click **Generate**. To confirm the job really
 | Setting | Value |
 |---|---|
 | Model | `minimax_h3_fasth3_omni`, or `minimax_h3_ref2va_pruned` |
-| LoRAs | both at 1.0. For Two Phases, use `1;1 1;1` |
+| LoRAs | One phase: both at 1.0. Two Phases: control LoRA only, `1;1` |
 | Video | `video_prompt_type` `V` or `VU`, with the structure as `video_guide` |
 | Start image | `image_prompt_type` `S`, `image_start` |
 | Prompt splitting | `multi_prompts_gen_type` `FG`, or the six sections become six jobs |
@@ -102,13 +104,15 @@ These are under **Advanced Mode**. Click **Generate**. To confirm the job really
 <WanGP venv python> tools/solar_render.py --wangp <WanGP app> --structure previz.mp4 --first first.png --prompt prompt.txt --out out.mp4
 ```
 
-Add `--fasth3 --phases 2` for FastH3 Two Phases, and `--resolution 864x480` for a draft.
+Add `--fasth3 --phases 2` for FastH3 Two Phases (control LoRA only), and `--resolution 864x480` for a draft.
 
 ## FastH3 Omni Two Phases
 
 WanGP locks FastH3 Omni to one phase and silently rewrites a Two Phases request back to one. The pipeline itself has phase-2 code for this kind of model, so the plugin lifts the lock. It only adds the option: FastH3 still defaults to one phase. It works with or without the SolarRenderer LoRAs.
 
 The upstream documentation gives no reason for the lock, so treat this as unsupported. It could break on a WanGP update, or show problems on shots we did not test.
+
+**Use it for 480p drafts, not at 1080.** FastH3 at about 1080 shows hard horizontal breaks on rows that are multiples of 128, for example a cut across a forehead. Two Phases shows them clearly, on two machines and two shots. One phase shows fewer, and they come and go by frame. No such breaks turned up in our 480p renders or on regular H3 at 1080. The cause is not established: the spacing matches FastH3's sparse attention tiles (128 px tall), but that is an inference. Check at 100%, never a shrunken view.
 
 Check the output really ran it: `guidance_phases` in the file's embedded settings must read 2.
 
@@ -120,12 +124,15 @@ Measured on two shots, one take each, 107 frames at 1920x1088 or 864x480, includ
 | FastH3 480p, Two Phases | 78 s | 68 s |
 | FastH3 1080p, one phase | 327 s | not run |
 | FastH3 1080p, Two Phases | 217 s | 288 s |
-| FastH3 + SolarRenderer 480p, Two Phases | 72 s | 86 s |
-| FastH3 + SolarRenderer 1080p, Two Phases | 303 s | 436 s |
+| FastH3 + both LoRAs 480p, one phase | 108 s | 120 s |
+| FastH3 + control LoRA 480p, Two Phases | 86 s | 101 s |
+
+Do not use these: FastH3 + both LoRAs at Two Phases took 72 s and 86 s at 480p and 303 s and 436 s at 1080p, and shows the mesh above. The two 0.2.1 rows were measured a day later on a newer WanGP, so small gaps mean little.
 
 ## Tips and limits
 
-- **Keep the LoRAs on both phases.** With them on phase 1 only (`1;0 1;0`), the previz flashed through briefly in our test.
+- **Keep the control LoRA on both phases of a Two Phases job.** With both LoRAs on phase 1 only (`1;0 1;0`), the previz flashed through briefly in our test.
+- **Make the structure as long as the shot.** Past its end the render stops following anything and invents the world.
 - **It follows the structure literally.** Block walls become real walls, and an empty moment in the previz becomes an empty frame. Get the previz right first.
 - **Start from frame 0 of the structure.** A start frame that does not line up with it fights the render.
 - **You may not need an animated character.** In a short test, a floating box with a sphere head (no limbs) still gave a fully formed runner with natural legs, moving where the box moved. Figures tended to land a little small, with their feet near the bottom of the box.
@@ -151,7 +158,7 @@ On WanGP v19.10, starting with the plugin removed:
 - Both profiles appear in the preset list and apply.
 - The steps above, run through the GUI with FastH3 Omni at 832x480 and 107 frames: 70 s. The file's embedded settings read `guidance_phases` 2, `video_prompt_type` `VU`, `multi_prompts_gen_type` `FG`, and `solar_jobs.log` shows the job.
 
-Not tested: a GUI render with **SolarRenderer 4 Steps** (regular H3 was only rendered headless), and WanGP downloading the LoRAs from the profile links. We already had the files; both links answer with the right file size.
+Not tested: the two 0.2.1 FastH3 profiles through the GUI (the same settings were rendered headless, 2 shots, 1 seed, judged on single frames at native size), a GUI render with **SolarRenderer 4 Steps** (regular H3 was only rendered headless), and WanGP downloading the LoRAs from the profile links. We already had the files; both links answer with the right file size.
 
 ## Licenses and credits
 

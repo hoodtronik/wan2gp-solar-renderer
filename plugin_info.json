@@ -1,12 +1,12 @@
 {
   "name": "H3 SolarRenderer",
   "author": "hoodtronik",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "SolarRenderer on WanGP's MiniMax H3: a structure video laid frame-aligned over the target, few-step sampling, held silence. Also adds Two Phases to FastH3 Omni.",
   "type": ["model"],
   "model_handlers": ["./h3_solar_hooks"],
   "defaults": "./defaults",
   "profiles": "./profiles",
-  "date": "2026-11-04",
+  "date": "2026-11-05",
   "wan2gp_version": "19.10"
 }
