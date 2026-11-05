@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+solar_jobs.log
+*.mp4

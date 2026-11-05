@@ -1,0 +1,16 @@
+{
+    "merge_loras": "merge before",
+    "activated_loras": [
+        "https://huggingface.co/Enderfga/SolarRenderer/resolve/main/solarrenderer_4step_lora.safetensors",
+        "https://huggingface.co/Enderfga/SolarRenderer/resolve/main/solarrenderer_control_lora.safetensors"
+    ],
+    "loras_multipliers": "1.0 1.0",
+    "sample_solver": "euler",
+    "num_inference_steps": 4,
+    "guidance_phases": 1,
+    "guidance_scale": 1,
+    "flow_shift": 12,
+    "custom_sigmas": "",
+    "skip_steps_cache_type": "",
+    "custom_settings": {"audio_refinement": "none"}
+}

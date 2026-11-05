@@ -1,0 +1,20 @@
+wan2gp-solar-renderer
+Copyright 2026 hoodtronik
+Licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This plugin implements the sampling setup of SolarRenderer for WanGP and includes one file from it:
+assets/h3_silence_153_158_170.safetensors
+
+--------------------------------------------------------------------------------
+SolarRenderer
+--------------------------------------------------------------------------------
+Copyright 2026 SolarRenderer authors
+https://github.com/Enderfga/SolarRenderer
+Code licensed under the Apache License, Version 2.0.
+
+--------------------------------------------------------------------------------
+Not distributed here
+--------------------------------------------------------------------------------
+The SolarRenderer LoRAs and MiniMax H3 are not part of this repository. They are under the MiniMax H3 Community
+License Agreement, Copyright (c) 2026 MiniMax, including its territorial restrictions and Acceptable Use Policy.
+Obtain them from their publishers under those terms.
