@@ -115,7 +115,7 @@ def install(pipeline_cls):
         arguments = bound.arguments
         prompt_type = arguments.get("video_prompt_type") or ""
         if not self.reference_mode or self.fixed_prompt is not None or "V" not in prompt_type or "G" in prompt_type or "-" in prompt_type:
-            raise ValueError("SolarRenderer needs H3 Ref2VA with video_prompt_type V and a structure video as video_guide")
+            raise ValueError("SolarRenderer needs H3 Ref2VA and a frame-aligned structure video: in the GUI choose 'Use Control Video as In-Context Guide' (not 'Use One Reference Video'); through the API use video_prompt_type V or VU")
         if arguments.get("input_frames") is None:
             raise ValueError("SolarRenderer needs a structure video (video_guide)")
         module = sys.modules[type(self).__module__]

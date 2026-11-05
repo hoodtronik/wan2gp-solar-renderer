@@ -3,6 +3,8 @@
 Model handlers are imported in every mode (GUI, --deepy-server,
 in-process API), plugin.py only in GUI mode. Importing this module installs the pipeline wrap everywhere.
 """
+import os
+
 try:
     from . import solar
 except Exception as error:  # a broken plugin file must never stop WanGP from starting
@@ -10,6 +12,7 @@ except Exception as error:  # a broken plugin file must never stop WanGP from st
     print(f"[H3 SolarRenderer] failed to import: {error!r}")
 
 REF_ARCHITECTURES = ("minimax_h3_ref2va", "minimax_h3_ref2va_pruned")
+PROFILES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "profiles")
 SETTING = {
     "id": "solar_renderer",
     "name": "SolarRenderer",
@@ -52,6 +55,14 @@ def activate():
             # wgp.py forces FastH3 Omni to one phase through these flags, but pipeline.py has PDD phase-2 code. This offers the option only; FastH3 still defaults to one phase.
             if isinstance(result, dict) and isinstance(model_def, dict) and model_def.get("fasth3"):
                 result.update({"guidance_max_phases": 2, "lock_guidance_phases": False, "visible_phases": 2, "inference_steps2": True, "lora_multiplier_phases": 2})
+            # CLAUDE-NOTE: this handler has zero model types, so WanGP never attaches this plugin's profiles root to H3 and the
+            # profiles stay out of the GUI list (found by the 2026-11-04 GUI test). An absolute profiles_dir entry is supported by wgp.py.
+            if isinstance(result, dict) and isinstance(model_def, dict):
+                folder = os.path.join(PROFILES, "minimax_h3_fasth3" if model_def.get("fasth3") else "minimax_h3_ref2va")
+                dirs = result.get("profiles_dir") or []
+                dirs = [dirs] if isinstance(dirs, str) else list(dirs)
+                if folder not in dirs:
+                    result["profiles_dir"] = dirs + [folder]
             return _with_setting(result)
 
         query_model_def._h3_solar = True
