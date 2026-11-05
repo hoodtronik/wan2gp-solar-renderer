@@ -51,13 +51,30 @@ The two profiles point at the LoRAs by URL, so WanGP should fetch them on first 
 - `solarrenderer_4step_lora.safetensors`
 - `solarrenderer_control_lora.safetensors`
 
+## Which lane to use
+
+**hoodtronik's pick for previz-driven shots: regular H3 + Larry v4 at 8 steps + this mix.** In side-by-sides it beat every FastH3 option here, at 480p and at 1080. Use profile **SolarRenderer Larry 8 Steps 2 Phases**, or `--larry` headless.
+
+| Setting | Value |
+|---|---|
+| Model | MiniMax H3 Ref2VA Pruned |
+| LoRAs (phase 1;phase 2) | Larry v4 `1;0`, 4-step `1;0`, control `1;1` |
+| Steps | 8 + 3 phase-2 steps, Euler, flow shift 12, guidance 1, Two Phases |
+| Sizes | 864x480 draft, 1920x1080 final |
+
+Measured at 107 frames, including model load: 105-116 s at 480p, 332-415 s at 1080. It is 2 shots and 1 seed, with no usable sound, and it has only been rendered headless so far.
+
+**His opinion of FastH3 Omni + SolarRenderer: the walking and movement look janky.** The FastH3 profiles stay here because they are faster to try, but he does not recommend them for finished work. Plain FastH3 Omni without SolarRenderer looked solid to him at 1344x768.
+
+Larry v4 comes from [DeepBeepMeep's H3 repo](https://huggingface.co/DeepBeepMeep/MiniMax-H3). Sampling on regular H3: 4 steps runs SolarRenderer's own re-noise schedule; any other step count keeps the job's solver and steps.
+
 ## Use
 
 **Selecting a SolarRenderer LoRA is the switch.** Nothing else turns the mode on, and H3 jobs without them are untouched. The profile below selects what it needs.
 
 > **Changed in 0.2.1: do not run the 4-step LoRA in Two Phases.** It lays a visible mesh over the frame, heavy at 1080. The **SolarRenderer FastH3 2 Phases** profile now uses the control LoRA only, and **SolarRenderer FastH3 1 Phase** keeps both LoRAs. If you rendered with the old profile, look at your clips at 100%: a shrunken view can hide it. Also avoid FastH3 Two Phases at 1080: see below.
 
-The steps show FastH3 Omni with Two Phases. For regular H3, choose **Pruned** in step 6 and **SolarRenderer 4 Steps** in step 7, and leave it on one phase.
+The steps show FastH3 Omni with Two Phases. For regular H3, choose **Pruned** in step 6 and **SolarRenderer Larry 8 Steps 2 Phases** in step 7, or **SolarRenderer 4 Steps** on one phase.
 
 ### Choose the model and the profile
 
@@ -104,7 +121,7 @@ These are under **Advanced Mode**. Click **Generate**. To confirm the job really
 <WanGP venv python> tools/solar_render.py --wangp <WanGP app> --structure previz.mp4 --first first.png --prompt prompt.txt --out out.mp4
 ```
 
-Add `--fasth3 --phases 2` for FastH3 Two Phases (control LoRA only), and `--resolution 864x480` for a draft.
+Add `--larry` for the recommended lane, `--fasth3 --phases 2` for FastH3 Two Phases (control LoRA only), and `--resolution 864x480` for a draft.
 
 ## FastH3 Omni Two Phases
 
@@ -158,7 +175,7 @@ On WanGP v19.10, starting with the plugin removed:
 - Both profiles appear in the preset list and apply.
 - The steps above, run through the GUI with FastH3 Omni at 832x480 and 107 frames: 70 s. The file's embedded settings read `guidance_phases` 2, `video_prompt_type` `VU`, `multi_prompts_gen_type` `FG`, and `solar_jobs.log` shows the job.
 
-Not tested: the two 0.2.1 FastH3 profiles through the GUI (the same settings were rendered headless, 2 shots, 1 seed, judged on single frames at native size), a GUI render with **SolarRenderer 4 Steps** (regular H3 was only rendered headless), and WanGP downloading the LoRAs from the profile links. We already had the files; both links answer with the right file size.
+Not tested: the Larry profile and the two FastH3 profiles through the GUI (the same settings were rendered headless, 2 shots, 1 seed, judged on single frames at native size), a GUI render with **SolarRenderer 4 Steps** (regular H3 was only rendered headless), and WanGP downloading the LoRAs from the profile links. We already had the files; both links answer with the right file size.
 
 ## Licenses and credits
 

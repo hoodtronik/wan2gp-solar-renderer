@@ -108,7 +108,8 @@ def install(pipeline_cls):
         # Ref2VA Pruned that dropped this one, and renders ran the LoRAs alone while looking fine. FastH3 keeps its own fixed solver.
         loras = str(bound.arguments.get("loras_selected") or "")
         requested = str(settings.get(SETTING_ID) or "").strip().lower() if isinstance(settings, dict) else ""
-        mode = "" if "solarrenderer_" not in loras and not requested else "aligned" if getattr(self.transformer, "fasth3_inference", None) is not None else "on"
+        # CLAUDE-NOTE (2026-11-05): "on" forces SolarRenderer's 4 re-noise steps. Any other step count means the job brings its own speed LoRA and schedule (FastH3, Larry 8 steps), so keep them and only lay the structure over the target.
+        mode = "" if "solarrenderer_" not in loras and not requested else "aligned" if getattr(self.transformer, "fasth3_inference", None) is not None or bound.arguments.get("sampling_steps") != STEPS else "on"
         if not mode or bound.arguments.get("refinement_mode"):
             return original(self, *args, **kwargs)
         bound.apply_defaults()

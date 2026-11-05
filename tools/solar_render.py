@@ -23,10 +23,15 @@ def main():
     ap.add_argument("--frames", type=int, default=158, help="17n + 5; trained at 158")
     ap.add_argument("--resolution", default="1344x768")
     ap.add_argument("--fasth3", action="store_true", help="FastH3 Omni instead of MiniMax H3 Ref2VA Pruned")
-    ap.add_argument("--phases", type=int, default=1, choices=(1, 2), help="2 needs --fasth3")
+    ap.add_argument("--phases", type=int, default=1, choices=(1, 2), help="2 needs --fasth3 or --larry")
+    ap.add_argument("--larry", action="store_true", help="the recommended previz lane: regular H3, Larry v4, 8 steps, Two Phases, 4-step LoRA in phase 1 only")
     a = ap.parse_args()
-    if a.phases == 2 and not a.fasth3:
-        ap.error("--phases 2 needs --fasth3: regular H3 runs SolarRenderer in one phase")
+    if a.fasth3 and a.larry:
+        ap.error("pick --fasth3 or --larry")
+    if a.larry:
+        a.phases = 2
+    if a.phases == 2 and not (a.fasth3 or a.larry):
+        ap.error("--phases 2 needs --fasth3 or --larry: SolarRenderer's own 4 steps run in one phase")
     root = Path(a.wangp).resolve()
     structure, first, out = Path(a.structure).resolve(), Path(a.first).resolve() if a.first else None, Path(a.out).resolve()
     prompt = Path(a.prompt).read_text(encoding="utf-8")
@@ -38,13 +43,15 @@ def main():
     settings = {
         "model_type": "minimax_h3_fasth3_omni" if a.fasth3 else "minimax_h3_ref2va_pruned", "prompt": prompt, "multi_prompts_gen_type": "FG",
         "resolution": a.resolution, "video_length": a.frames, "force_fps": 24, "seed": a.seed,
-        "num_inference_steps": 8 if a.fasth3 else 4, "num_inference_steps2": 3, "sample_solver": "euler", "flow_shift": 12.0,
+        "num_inference_steps": 8 if a.fasth3 or a.larry else 4, "num_inference_steps2": 3, "sample_solver": "euler", "flow_shift": 12.0,
         "guidance_phases": a.phases, "guidance_scale": 1.0, "custom_sigmas": "", "skip_steps_cache_type": "", "sliding_window_size": 362,
         "video_prompt_type": "V", "video_guide": str(structure), "audio_prompt_type": "",
         # The 4-step LoRA in Two Phases lays a visible mesh over the frame: Two Phases runs the control LoRA alone.
         "activated_loras": ["solarrenderer_control_lora.safetensors"] if a.phases == 2 else ["solarrenderer_4step_lora.safetensors", "solarrenderer_control_lora.safetensors"],
         "loras_multipliers": "1;1" if a.phases == 2 else "1.0 1.0", "custom_settings": {"audio_refinement": "none"},
     }
+    if a.larry:
+        settings.update(activated_loras=["minimax_h3_larryvrh_v4_step600_ema.safetensors", "solarrenderer_4step_lora.safetensors", "solarrenderer_control_lora.safetensors"], loras_multipliers="1;0 1;0 1;1")
     if first:
         settings.update(image_prompt_type="S", image_start=str(first))
     began = time.time()
